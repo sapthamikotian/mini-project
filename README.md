@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Bitcoin Sentinel
 
 AI-powered Bitcoin transaction fraud detection and monitoring, built on the
@@ -179,3 +180,6 @@ real results** — it exists only to test that the code runs.
   ~200k-row Elliptic dataset; move to a proper graph store for anything
   larger.
 - There's no authentication. Add it before deploying this anywhere multi-user.
+=======
+# mini-project
+>>>>>>> 87d2ad70e9c98d3ad689cb04c982b5df50d4a362
