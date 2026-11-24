@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-bg text-text-primary; font-family: "Inter", "Segoe UI", system-ui, sans-serif; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0D1424; }
+::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3485F7; }
+
+.card { @apply bg-card border border-[#1E293B] rounded-xl shadow-lg shadow-black/20; }
+.btn-primary { @apply bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium; }
+.btn-secondary { @apply bg-[#1A2740] hover:bg-[#223150] text-text-primary px-4 py-2 rounded-lg transition-colors text-sm font-medium border border-[#1E293B]; }
+.input-field { @apply bg-[#0D1424] border border-[#1E293B] rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary; }

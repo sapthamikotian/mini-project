@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data & models (large / generated; see README for how to regenerate)
+data/raw/*.csv
+data/processed/*.csv
+data/processed/*.db
+data/processed/*.json
+ml_models/*.joblib
+ml_models/*.json
+
+# Node
+node_modules/
+frontend/dist/
+.env
+*.log
