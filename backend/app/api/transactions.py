@@ -72,24 +72,49 @@ def search_transactions(q: str = Query(..., min_length=1), page: int = Query(1, 
     return list_transactions(page=page, page_size=page_size, search=q, db=db)  # type: ignore[arg-type]
 
 
+EXPORT_COLUMNS = ["transaction_id", "time_step", "original_label", "predicted_label",
+                  "illicit_probability", "risk_score", "risk_level", "out_degree",
+                  "in_degree", "illicit_neighbors"]
+
+
+def _csv_stream(q):
+    """Stream CSV rows in batches from a column query. Selecting columns in a
+    single joined query avoids one lazy-load query per exported row."""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(EXPORT_COLUMNS)
+    yield buf.getvalue()
+    buf.seek(0)
+    buf.truncate(0)
+    row_count = 0
+    for row in q.yield_per(5000):
+        writer.writerow(["" if value is None else value for value in row])
+        row_count += 1
+        if row_count % 2000 == 0:  # flush in blocks, not one HTTP write per row
+            yield buf.getvalue()
+            buf.seek(0)
+            buf.truncate(0)
+    if buf.tell():
+        yield buf.getvalue()
+
+
 @router.get("/export")
 def export_transactions(label: str | None = None, risk_level: str | None = None,
                         time_step: int | None = None, db: Session = Depends(get_db)):
     """Export filtered transactions to CSV."""
-    q = _apply_filters(db.query(Transaction), time_step, label, risk_level, None)
-    buf = io.StringIO()
-    writer = csv.writer(buf)
-    writer.writerow(["transaction_id", "time_step", "original_label", "predicted_label",
-                     "illicit_probability", "risk_score", "risk_level", "out_degree",
-                     "in_degree", "illicit_neighbors"])
-    for tx in q.limit(200_000).all():
-        p = tx.prediction
-        writer.writerow([tx.transaction_id, tx.time_step, tx.original_label,
-                         p.predicted_label if p else "", p.illicit_probability if p else "",
-                         p.risk_score if p else "", p.risk_level if p else "",
-                         tx.out_degree, tx.in_degree, tx.illicit_neighbors])
-    buf.seek(0)
-    return StreamingResponse(buf, media_type="text/csv",
+    q = (db.query(Transaction.transaction_id, Transaction.time_step,
+                  Transaction.original_label, Prediction.predicted_label,
+                  Prediction.illicit_probability, Prediction.risk_score,
+                  Prediction.risk_level, Transaction.out_degree, Transaction.in_degree,
+                  Transaction.illicit_neighbors)
+         .outerjoin(Prediction, Transaction.transaction_id == Prediction.transaction_id))
+    if time_step is not None:
+        q = q.filter(Transaction.time_step == time_step)
+    if label is not None:
+        q = q.filter(Transaction.original_label == label)
+    if risk_level is not None:
+        q = q.filter(Prediction.risk_level == risk_level)
+    return StreamingResponse(_csv_stream(q.limit(200_000)), media_type="text/csv",
                              headers={"Content-Disposition": "attachment; filename=transactions.csv"})
 
 
